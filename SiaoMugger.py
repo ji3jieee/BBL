@@ -9,17 +9,22 @@ BOT_USERNAME: Final = '@SiaoMuggerBot'
 
 ##COMMANDS 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Eh mugger! What you grinding for today?')
+    await update.message.reply_text('Eh mugger! What you grinding for today?🤔')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Use this command to do whatever')
+    message = f"😐Hello this kind of basic stuff also don't know?!😐\n\n"
+    message += f"📃 /addtask to add tasks to your list\n"
+    message += f"💢 /removetask to remove tasks from your list when you are done (don't slack hor) \n"
+    message += f"🚫 /cancel if you need to cancel your task when adding halfway\n"
+    message += f"📝 /showtasks to show all the tasks you have right now"
+    await update.message.reply_text(message)
 
 TASK_NAME, TASK_DUE_DATE, REMOVE_NAME = range(3)
 # Dictionary to store tasks for each user (optional)
 user_tasks = {}
 
 async def addtask_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Please input the name of your task.')
+    await update.message.reply_text(f"What's your task called?")
     return TASK_NAME
 
 ##FOLLOW UP FUNCTIONS
@@ -41,7 +46,8 @@ async def task_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Check if the due date is in the future
         if due_date <= current_time:
             await update.message.reply_text(
-                "The due date and time must be in the future! Please input a valid due date in the format 'YYYY-MM-DD HH:MM'."
+                "You add a task due *in the past* for what siol? The due date and time must be *in the future*! Please input a valid due date in the format 'YYYY-MM-DD HH:MM'.",
+                parse_mode="Markdown"
             )
             return TASK_DUE_DATE
         
@@ -59,7 +65,7 @@ async def task_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         # Handle invalid input
         await update.message.reply_text(
-            "Wrong format la wth! Please use 'YYYY-MM-DD HH:MM' (e.g., '2025-01-20 14:30')."
+            "Wrong format la! Please use 'YYYY-MM-DD HH:MM' (e.g., '2025-01-20 14:30')."
         )
         return TASK_DUE_DATE
 
@@ -92,7 +98,7 @@ async def removetasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # Step 2: Check if there are tasks to remove
     if not user_task_list:
-        await update.message.reply_text("You don't have any tasks to remove! Use /addtask to add one first.")
+        await update.message.reply_text("You don't have any tasks to remove lol! Use /addtask to add one first.")
         return ConversationHandler.END
 
     # Step 3: List all tasks
@@ -108,40 +114,50 @@ async def removetasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def remove_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_task_list = user_tasks.get(user_id, [])
-    task_name_to_remove = update.message.text.strip()
+    task_name_to_remove = update.message.text.strip()  # Clean user input
 
-    # Step 5: Check if task exists
+    # Search for the task in the list
     task_to_remove = next((task for task in user_task_list if task['task_name'].lower() == task_name_to_remove.lower()), None)
 
     if task_to_remove:
-        # Remove the task from the user's list
+        # Remove the task
         user_task_list.remove(task_to_remove)
         await update.message.reply_text(f"Okay, removed the task: '{task_to_remove['task_name']}'! ✅")
 
-        # Step 6: If no tasks left, remove user entry
+        # If no tasks left, clear user entry
         if not user_task_list:
-            user_tasks.pop(user_id)  # Remove the user entry if no tasks left
+            user_tasks.pop(user_id)
 
         return ConversationHandler.END
     else:
-        # If task is not found
+        # If task not found
         await update.message.reply_text("I couldn't find a task with that name! Please reply with an exact task name.")
         return REMOVE_NAME
 
+
 async def schedule_reminder(update: Update, user_id: int, task_name: str, due_date: datetime):
-    """Schedules the reminder for the given task."""
+    """Schedules the reminders for the given task."""
     now = datetime.now()
-    time_to_wait = (due_date - now).total_seconds()
+    time_to_due = (due_date - now).total_seconds()
 
-    if time_to_wait > 0:
-        # Create a background task to send the reminder
-        asyncio.create_task(send_reminder(update, task_name, time_to_wait))
+    # Calculate wait times for 12 hours before and exactly at the due time
+    twelve_hours_before = max(time_to_due - 43200, 0)  # 12 hours before
+    due_time = max(time_to_due, 0)  # At the due time
 
-async def send_reminder(update: Update, task_name: str, time_to_wait: float):
+    # Schedule the reminders
+    if twelve_hours_before > 0:
+        asyncio.create_task(send_reminder(update, task_name, twelve_hours_before, "12 hours"))
+    if due_time > 0:
+        asyncio.create_task(send_reminder(update, task_name, due_time, "now"))
+
+async def send_reminder(update: Update, task_name: str, time_to_wait: float, reminder_type: str):
     """Waits for the specified time and sends the reminder."""
     await asyncio.sleep(time_to_wait)
     try:
-        await update.message.reply_text(f"Reminder: Your task '{task_name}' is due now! Submit liao fasterfaster! ⏰")
+        if reminder_type == "now":
+            await update.message.reply_text(f"Reminder: Your task '{task_name}' is due now! Submit liao fasterfaster! ⏰")
+        else:
+            await update.message.reply_text(f"Reminder: Your task '{task_name}' is due in {reminder_type}! Faster start doing already! ⏰")
     except Exception as e:
         print(f"Error sending reminder: {e}")
 
@@ -150,7 +166,7 @@ if __name__ == '__main__':
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('removetask', removetasks_command))
+
     
     # app.add_handler(CommandHandler('addtask', addtask_command))
 
