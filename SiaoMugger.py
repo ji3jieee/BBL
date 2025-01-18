@@ -7,7 +7,7 @@ TOKEN: Final = '7870019893:AAG4LYwPcWWdPystb2Ic5vHtyuej9kqtW_Y'
 BOT_USERNAME: Final = '@SiaoMuggerBot'
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello! What mugging tasks do you have today?')
+    await update.message.reply_text('Eh mugger! What you grinding for today?')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Use this command to do whatever')
@@ -23,7 +23,7 @@ async def addtask_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def task_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     task_name = update.message.text  # Get the task name
     context.user_data['task_name'] = task_name  # Store task name in user data
-    await update.message.reply_text(f"Okay, got it! Please input the due date of '{task_name}' in the format YYYY-MM-DD HH:MM!")
+    await update.message.reply_text(f"Okay onz. Please input the due date of '{task_name}' in the format YYYY-MM-DD HH:MM!")
     return TASK_DUE_DATE
 
 async def task_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -43,13 +43,13 @@ async def task_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         # Handle invalid input
         await update.message.reply_text(
-            "Invalid date format! Please use 'YYYY-MM-DD HH:MM' (e.g., '2025-01-20 14:30')."
+            "Wrong format la wth! Please use 'YYYY-MM-DD HH:MM' (e.g., '2025-01-20 14:30')."
         )
         return TASK_DUE_DATE
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Cancel the current conversation."""
-    await update.message.reply_text("Okay, I've canceled the current task setup. Let me know if you need anything else!")
+    await update.message.reply_text("Okay, I've canceled the current task setup. Take a break, king/queen!")
     return ConversationHandler.END
 
 #SHOWING ALL THE TASKS 
