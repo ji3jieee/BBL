@@ -2,6 +2,7 @@ from typing import Final, List
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from datetime import datetime
+import asyncio
 
 TOKEN: Final = '7870019893:AAG4LYwPcWWdPystb2Ic5vHtyuej9kqtW_Y'
 BOT_USERNAME: Final = '@SiaoMuggerBot'
@@ -43,12 +44,17 @@ async def task_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "The due date and time must be in the future! Please input a valid due date in the format 'YYYY-MM-DD HH:MM'."
             )
             return TASK_DUE_DATE
+        
         # Store the task (optional)
         user_id = update.message.from_user.id
         user_tasks.setdefault(user_id, []).append({'task_name': task_name, 'due_date': due_date})
-        
+
         # Confirm task creation
         await update.message.reply_text(f"Task '{task_name}' with due date '{due_date}' has been added! 🎉")
+        
+        # Schedule the reminder
+        await schedule_reminder(update, user_id, task_name, due_date)
+        
         return ConversationHandler.END
     except ValueError:
         # Handle invalid input
@@ -122,13 +128,29 @@ async def remove_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("I couldn't find a task with that name! Please reply with an exact task name.")
         return REMOVE_NAME
 
-    
+async def schedule_reminder(update: Update, user_id: int, task_name: str, due_date: datetime):
+    """Schedules the reminder for the given task."""
+    now = datetime.now()
+    time_to_wait = (due_date - now).total_seconds()
+
+    if time_to_wait > 0:
+        # Create a background task to send the reminder
+        asyncio.create_task(send_reminder(update, task_name, time_to_wait))
+
+async def send_reminder(update: Update, task_name: str, time_to_wait: float):
+    """Waits for the specified time and sends the reminder."""
+    await asyncio.sleep(time_to_wait)
+    try:
+        await update.message.reply_text(f"Reminder: Your task '{task_name}' is due now! Submit liao fasterfaster! ⏰")
+    except Exception as e:
+        print(f"Error sending reminder: {e}")
 
 if __name__ == '__main__':
     print('Starting bot...')
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
+    app.add_handler(CommandHandler('removetask', removetasks_command))
     
     # app.add_handler(CommandHandler('addtask', addtask_command))
 
