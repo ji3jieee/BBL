@@ -1,6 +1,6 @@
 from typing import Final
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 TOKEN: Final = '7870019893:AAG4LYwPcWWdPystb2Ic5vHtyuej9kqtW_Y'
 BOT_USERNAME: Final = '@SiaoMuggerBot'
@@ -100,7 +100,8 @@ if __name__ == '__main__':
     #commands
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('add', add_homework))
+    #app.add_handler(CommandHandler('add', add_homework))
+    app.add_handler(CommandHandler('addhomework', add_homework_command))  
     # app.add_handler(CommandHandler('task name', homework_name))
     # app.add_handler(CommandHandler('due date', homework_date_time))
     # app.add_handler(CommandHandler('help', reminder_count))
